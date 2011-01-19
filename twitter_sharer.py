@@ -271,7 +271,7 @@ def do_sendUpdate(stuff):
 	api = twitter.Api(consumer_key="4a4AK5ZUpJu3fxNfaXb5A", consumer_secret="IRvMihJ6vVLIMcWDDIe945zoqMHiwfVY3FCbnasMAMk",
 		access_token_key=credentials['oauth_token'], access_token_secret=credentials['oauth_token_secret'])
 	stat = None
-	#stat = api.PostUpdate(status=stuff['update'])  # And post the update
+	stat = api.PostUpdate(status=stuff['update'])  # And post the update
 	return stat
 
 def do_sendDM(stuff):
