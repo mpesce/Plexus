@@ -144,6 +144,11 @@ def process_message(msg):
 		print "COMMAND"
 
 if __name__ == "__main__":
-	print "Starting Plexus SMTP interface on", get_my_ipv4(),  "port 4180"
-	server = PlexusSMTPServer((get_my_ipv4(), 4180), None)
+	if (len(sys.argv) > 1):
+		set_ip = sys.argv[1]
+	else:
+		set_ip = get_my_ipv4()
+	
+	print "Starting Plexus SMTP interface on", set_ip,  "port 4180"
+	server = PlexusSMTPServer((set_ip, 4180), None)
 	asyncore.loop()

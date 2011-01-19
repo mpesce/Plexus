@@ -184,16 +184,22 @@ class PlexusSMTPServer(smtpd.SMTPServer):
 		process_message(inner_msg)
 
 
+# Format for From: is username@instanceID.plexus.relationalspace.org
+# Where username is the account name / handle of the user account
+# And the instanceID is the uuid for the process sending the message
 def unpack_sender(adr):
 	parts = adr.split("@")
 	moreparts = parts[1].split(".")
-	return { "user": parts[0], "listenerID": moreparts[0] }
+	return { "type": parts[0], "destid": moreparts[0] }
 
 
+# Format for To: is type@destID.plexus.relationalspace.org
+# Where type is the type of message (update, command, post, etc...)
+# And the destID is the ID of the destination Plexus process.  Which should be us.  Hopefully.
 def unpack_to(to):
 	parts = to.split("@")
 	moreparts = parts[1].split(".")
-	return { "type": parts[0], "destid": moreparts[0] }
+	return { "user": parts[0], "listenerid": moreparts[0] }
 
 
 # All of the built-in types are validated here.  
@@ -226,13 +232,14 @@ def process_message(msg):
 	msgid = msg['Subject']		# Should have a UUID therein - some way to validate this?
 	
 	mfrom = msg['From']		# Get the addressee information
-	adr = unpack_sender(mfrom)
-	print adr
+	f = unpack_sender(mfrom)
+	print f
 
 	mto = msg['To']
 	to = unpack_to(mto)
 	print to
-	if validate_type(to['type']):
+
+	if validate_type(f['type']):
 		print "Type valid"
 	else:
 		print "Type invalid"
@@ -248,9 +255,9 @@ def process_message(msg):
 	
 	# If this is an update, we should send an update out 
 	# If this is a message, we should send a DM
-	if (to['type'].find(u'update') == 0):
+	if (f['type'].find(u'update') == 0):
 		stat = do_sendUpdate(content_object)
-	elif (to['type'].find(u'message') == 0):
+	elif (f['type'].find(u'message') == 0):
 		do_sendDM(content_object)
 
 # We do everything here that we need to so we can post an update to Twitter.
@@ -263,10 +270,19 @@ def do_sendUpdate(stuff):
 	# Ok, open access to the Twitter API, using our credentials
 	api = twitter.Api(consumer_key="4a4AK5ZUpJu3fxNfaXb5A", consumer_secret="IRvMihJ6vVLIMcWDDIe945zoqMHiwfVY3FCbnasMAMk",
 		access_token_key=credentials['oauth_token'], access_token_secret=credentials['oauth_token_secret'])
-	stat = api.PostUpdate(status=stuff['update'])  # And post the update
+	stat = None
+	#stat = api.PostUpdate(status=stuff['update'])  # And post the update
 	return stat
 
 def do_sendDM(stuff):
+	credentials = getLogin()		# If this fails, well, we're screwed.  So it better not fail.
+	if (credentials == -1):
+		return
+
+	# Ok, open access to the Twitter API, using our credentials
+	api = twitter.Api(consumer_key="4a4AK5ZUpJu3fxNfaXb5A", consumer_secret="IRvMihJ6vVLIMcWDDIe945zoqMHiwfVY3FCbnasMAMk",
+		access_token_key=credentials['oauth_token'], access_token_secret=credentials['oauth_token_secret'])
+	thedm = api.PostDirectMessage(user=stuff['source'][0], text=stuff['message'])
 	return
 		
 
@@ -296,7 +312,12 @@ if __name__ == "__main__":
 		genInstance()
 		instance_id = getInstance()
 
-	print "Starting mail server on port 4180"
-	server = PlexusSMTPServer((kuanyin_ip, 4180), None)
+	if (len(sys.argv) > 1):
+		set_ip = sys.argv[1]
+	else:
+		set_ip = kuanyin_ip
+		
+	print "Starting mail server on", set_ip, "port 4180"
+	server = PlexusSMTPServer((set_ip, 4180), None)
 	asyncore.loop()
 
