@@ -190,7 +190,7 @@ class PlexusSMTPServer(smtpd.SMTPServer):
 def unpack_sender(adr):
 	parts = adr.split("@")
 	moreparts = parts[1].split(".")
-	return { "type": parts[0], "destid": moreparts[0] }
+	return { "user": parts[0], "listenerid": moreparts[0] }
 
 
 # Format for To: is type@destID.plexus.relationalspace.org
@@ -199,15 +199,15 @@ def unpack_sender(adr):
 def unpack_to(to):
 	parts = to.split("@")
 	moreparts = parts[1].split(".")
-	return { "user": parts[0], "listenerid": moreparts[0] }
+	return { "type": parts[0], "destid": moreparts[0] }
 
 
 # All of the built-in types are validated here.  
 # There's only two of them at the moment
 def validate_type(the_type):
-	if (the_type.find(u'update') == 0):
+	if (the_type.find(u'plexus-update') == 0):
 		return True
-	if (the_type.find(u'message') == 0):
+	if (the_type.find(u'plexus-message') == 0):
 		return True
 	return False
 
@@ -239,7 +239,7 @@ def process_message(msg):
 	to = unpack_to(mto)
 	print to
 
-	if validate_type(f['type']):
+	if validate_type(to['type']):
 		print "Type valid"
 	else:
 		print "Type invalid"
@@ -255,9 +255,9 @@ def process_message(msg):
 	
 	# If this is an update, we should send an update out 
 	# If this is a message, we should send a DM
-	if (f['type'].find(u'update') == 0):
+	if (to['type'].find(u'plexus-update') == 0):
 		stat = do_sendUpdate(content_object)
-	elif (f['type'].find(u'message') == 0):
+	elif (to['type'].find(u'plexus-message') == 0):
 		do_sendDM(content_object)
 
 # We do everything here that we need to so we can post an update to Twitter.
@@ -271,7 +271,7 @@ def do_sendUpdate(stuff):
 	api = twitter.Api(consumer_key="4a4AK5ZUpJu3fxNfaXb5A", consumer_secret="IRvMihJ6vVLIMcWDDIe945zoqMHiwfVY3FCbnasMAMk",
 		access_token_key=credentials['oauth_token'], access_token_secret=credentials['oauth_token_secret'])
 	stat = None
-	stat = api.PostUpdate(status=stuff['update'])  # And post the update
+	stat = api.PostUpdate(status=stuff['plexus-update'])  # And post the update
 	return stat
 
 def do_sendDM(stuff):
@@ -282,7 +282,7 @@ def do_sendDM(stuff):
 	# Ok, open access to the Twitter API, using our credentials
 	api = twitter.Api(consumer_key="4a4AK5ZUpJu3fxNfaXb5A", consumer_secret="IRvMihJ6vVLIMcWDDIe945zoqMHiwfVY3FCbnasMAMk",
 		access_token_key=credentials['oauth_token'], access_token_secret=credentials['oauth_token_secret'])
-	thedm = api.PostDirectMessage(user=stuff['source'][0], text=stuff['message'])
+	thedm = api.PostDirectMessage(user=stuff['destination'][0], text=stuff['plexus-message'])
 	return
 		
 

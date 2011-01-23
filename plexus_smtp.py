@@ -30,24 +30,24 @@ class PlexusSMTPServer(smtpd.SMTPServer):
 		#print '---------'
 		#print
 		#print "About to parse..."
-		self.parse_plexus_2822_data(data)
+		parse_plexus_2822_data(data)
 
-	# The Plexus message is a message-within-a-message
-	# That is to say, there is another RFC2822 message inside the message
-	# This makes the inner message transport independent.  Theoretically.
-	# Here, we peel off the outer envelope and reveal the inner message
-	def parse_plexus_2822_data(self, data):
-		print "PlexusSMTPServer::parse_plexus_2822_data"
-		msg = Parser().parsestr(data)
-		#msg = email.message_from_string(data)
-		#ymsg = yaml.dump(msg)
-		#print ymsg
-		inner_data = msg.get_payload()
-		print inner_data
-		inner_msg = Parser().parsestr(inner_data)
-		#ymsg = yaml.dump(inner_msg)
-		#print ymsg
-		process_message(inner_msg)
+# The Plexus message is a message-within-a-message
+# That is to say, there is another RFC2822 message inside the message
+# This makes the inner message transport independent.  Theoretically.
+# Here, we peel off the outer envelope and reveal the inner message
+def parse_plexus_2822_data(data):
+	#print "PlexusSMTPServer::parse_plexus_2822_data"
+	msg = Parser().parsestr(data)
+	#msg = email.message_from_string(data)
+	#ymsg = yaml.dump(msg)
+	#print ymsg
+	inner_data = msg.get_payload()
+	print inner_data
+	inner_msg = Parser().parsestr(inner_data)
+	#ymsg = yaml.dump(inner_msg)
+	#print ymsg
+	process_message(inner_msg)
 
 
 # Format for From: is username@instanceID.plexus.relationalspace.org
@@ -77,13 +77,13 @@ def get_my_ipv4():
 # All of the built-in types are validated here.  
 # There's only a few of them at the moment
 def validate_type(the_type):
-	if (the_type.find(u'update') == 0):
+	if (the_type.find(u'plexus-update') == 0):
 		return True
-	if (the_type.find(u'message') == 0):
+	if (the_type.find(u'plexus-message') == 0):
 		return True
-	if (the_type.find(u'post') == 0):
+	if (the_type.find(u'pleuxs-post') == 0):
 		return True
-	if (the_type.find(u'command') == 0):
+	if (the_type.find(u'plexus-command') == 0):
 		return True
 	else:
 		return False
@@ -131,16 +131,16 @@ def process_message(msg):
 
 	# Is there anything more fun than a state machine?  I thought not.
 	state = f['type']
-	if (state.find(u'update') == 0):			# Twitter updates, etc.
+	if (state.find(u'plexus-update') == 0):			# Twitter updates, etc.
 		print "UPDATE"
 		print "Sending it to the DQ"
 		dq.send_listened(msgid, f['type'], content_object['when'], contents)	# Pop it onto the DQ
-	elif (state.find(u'message') == 0):			# Twitter DMs, emails, FB messages, etc.
+	elif (state.find(u'plexus-message') == 0):			# Twitter DMs, emails, FB messages, etc.
 		print "MESSAGE"
 		dq.send_listened(msgid, f['type'], content_object['when'], contents)	# Pop it onto the DQ
-	elif (state.find(u'post') == 0):			# RSS, for example
+	elif (state.find(u'plexus-post') == 0):			# RSS, for example
 		print "POST"
-	elif (state.find(u'command') == 0):			# Plexus commands <- very important
+	elif (state.find(u'plexus-command') == 0):			# Plexus commands <- very important
 		print "COMMAND"
 
 if __name__ == "__main__":
