@@ -35,6 +35,7 @@ def genInstance():
 	print "Done!"
 
 def set_dest(addr):
+	global dest_ip
 	dest_ip = addr
 	return
 
