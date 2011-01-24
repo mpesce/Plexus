@@ -12,6 +12,7 @@ from email.parser import Parser, HeaderParser
 import email
 import socket
 import dq
+import plxaddr
 
 mypod_ip = "74.207.224.149"
 kuanyin_ip ="192.168.0.37"
@@ -76,17 +77,17 @@ def get_my_ipv4():
 
 # All of the built-in types are validated here.  
 # There's only a few of them at the moment
-def validate_type(the_type):
-	if (the_type.find(u'plexus-update') == 0):
-		return True
-	if (the_type.find(u'plexus-message') == 0):
-		return True
-	if (the_type.find(u'pleuxs-post') == 0):
-		return True
-	if (the_type.find(u'plexus-command') == 0):
-		return True
-	else:
-		return False
+# def validate_type(the_type):
+# 	if (the_type.find(u'plexus-update') == 0):
+# 		return True
+# 	if (the_type.find(u'plexus-message') == 0):
+# 		return True
+# 	if (the_type.find(u'pleuxs-post') == 0):
+# 		return True
+# 	if (the_type.find(u'plexus-command') == 0):
+# 		return True
+# 	else:
+# 		return False
 
 # The payload should be a JSON object
 # One would hope, anyway.  If it parses, then good.
@@ -105,21 +106,33 @@ def validate_payload(the_payload):
 def process_message(msg):
 	print "process_message"	
 
-	msgid = msg['Subject']		# Should have a UUID therein - some way to validate this?
-	
-	mfrom = msg['From']		# Get the addressee information
-	f = unpack_sender(mfrom)
-	print f
-
-	mto = msg['To']
-	to = unpack_to(mto)
-	print to
-
-	if validate_type(f['type']):
-		print "Type valid"
-	else:
-		print "Type invalid"
+	ph = plxaddr.parse_headers(msg)		# This should render lots of useful information.  No, seriously.
+	#print ph
+	if (ph == None):
+		print "Garbled headers, rejecting"
 		return
+
+# 	msgid = msg['Subject']		# Should have a UUID therein - some way to validate this?
+# 	
+# 	mfrom = msg['From']		# Get the addressee information
+# 	f = unpack_sender(mfrom)
+# 	print f
+# 
+# 	mto = msg['To']
+# 	to = unpack_to(mto)
+# 	print to
+
+# 	if validate_type(f['type']):
+# 		print "Type valid"
+# 	else:
+# 		print "Type invalid"
+# 		return
+
+# 	if validate_type(ph['plexus-identifier']):
+# 		print "Plexus Identifier valid"
+# 	else:
+# 		print "Plexus Identifier invalid"
+# 		return
 
 	contents = msg.get_payload()
 	if validate_payload(contents):
@@ -130,18 +143,23 @@ def process_message(msg):
 	content_object = json.loads(contents)	# Now we have a lovely object with stuff in it
 
 	# Is there anything more fun than a state machine?  I thought not.
-	state = f['type']
-	if (state.find(u'plexus-update') == 0):			# Twitter updates, etc.
-		print "UPDATE"
-		print "Sending it to the DQ"
-		dq.send_listened(msgid, f['type'], content_object['when'], contents)	# Pop it onto the DQ
-	elif (state.find(u'plexus-message') == 0):			# Twitter DMs, emails, FB messages, etc.
-		print "MESSAGE"
-		dq.send_listened(msgid, f['type'], content_object['when'], contents)	# Pop it onto the DQ
-	elif (state.find(u'plexus-post') == 0):			# RSS, for example
-		print "POST"
-	elif (state.find(u'plexus-command') == 0):			# Plexus commands <- very important
-		print "COMMAND"
+#	state = f['type']
+	if (ph['listened']):
+		print "We are listening, so we DQ this"
+		state = ph['plexus-identifier']
+		if (state.find(u'plexus-update') == 0):			# Twitter updates, etc.
+			print "UPDATE"
+			print "Sending it to the DQ"
+			dq.send_listened(ph['tracking_id'], state, content_object['when'], contents)	# Pop it onto the DQ
+		elif (state.find(u'plexus-message') == 0):			# Twitter DMs, emails, FB messages, etc.
+			print "MESSAGE"
+			dq.send_listened(ph['tracking_id'], state, content_object['when'], contents)	# Pop it onto the DQ
+		elif (state.find(u'plexus-post') == 0):			# RSS, for example
+			print "POST"
+		elif (state.find(u'plexus-command') == 0):			# Plexus commands <- very important
+			print "COMMAND"
+	else:
+		print "We are sharing, so we NQ this"
 
 if __name__ == "__main__":
 	if (len(sys.argv) > 1):

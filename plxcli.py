@@ -70,8 +70,8 @@ def send_update(data):
 	#signature = rsa.sign(listener_uuid, keys['priv'])
 	#print signature
 	# Get the user to put into 'From' field
-	msg['From'] = my_name + "@" + instance_id + ".plexus.relationalspace.org"  # That should be unique and global across Plexus
-	msg['To'] = "plexus-update@" + dest_id + ".plexus.relationalspace.org"  # Routing information for message type
+	msg['From'] = my_name + "." + instance_id + "@plexus.relationalspace.org"  # That should be unique and global across Plexus
+	msg['To'] = "plexus-update." + dest_id + "@plexus.relationalspace.org"  # Routing information for message type
 	msg['Subject'] = str(uuid.uuid4())  # unique ID for tracking messages
 	
 	print msg.as_string()
@@ -88,8 +88,8 @@ def send_message(msg, to):
 	plexus_data = { "service": "twitter", "plexus-message": msg.encode('utf-8'), "destination": name_list, "when": str(int(time.time())) }
 	msg = MIMEText(json.dumps(plexus_data))
 	msg.set_charset('utf-8') 
-	msg['From'] = my_name + "@" + instance_id + ".plexus.relationalspace.org"  # That should be unique and global across Plexus
-	msg['To'] = "plexus-message@" + dest_id + ".plexus.relationalspace.org"  # Routing information for message type
+	msg['From'] = my_name + "." + instance_id + "@plexus.relationalspace.org"  # That should be unique and global across Plexus
+	msg['To'] = "plexus-message." + dest_id + "@plexus.relationalspace.org"  # Routing information for message type
 	msg['Subject'] = str(uuid.uuid4())  # unique ID for tracking messages
 	
 	print msg.as_string()

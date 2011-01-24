@@ -9,6 +9,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.parser import Parser
 import email
+import plxaddr
 
 # Every module has a UUID associated with it, which becomes the item encoded in the signature
 # Thus uniquely identifing both the module and the sender
@@ -229,21 +230,27 @@ def validate_payload(the_payload):
 def process_message(msg):
 	print "process_message"	
 
-	msgid = msg['Subject']		# Should have a UUID therein - some way to validate this?
-	
-	mfrom = msg['From']		# Get the addressee information
-	f = unpack_sender(mfrom)
-	print f
-
-	mto = msg['To']
-	to = unpack_to(mto)
-	print to
-
-	if validate_type(to['type']):
-		print "Type valid"
-	else:
-		print "Type invalid"
+	ph = plxaddr.parse_headers(msg)		# This should render lots of useful information.  No, seriously.
+	#print ph
+	if (ph == None):
+		print "Garbled headers, rejecting"
 		return
+
+# 	msgid = msg['Subject']		# Should have a UUID therein - some way to validate this?
+# 	
+# 	mfrom = msg['From']		# Get the addressee information
+# 	f = unpack_sender(mfrom)
+# 	print f
+# 
+# 	mto = msg['To']
+# 	to = unpack_to(mto)
+# 	print to
+# 
+# 	if validate_type(to['type']):
+# 		print "Type valid"
+# 	else:
+# 		print "Type invalid"
+# 		return
 
 	contents = msg.get_payload()
 	if validate_payload(contents):
@@ -255,9 +262,14 @@ def process_message(msg):
 	
 	# If this is an update, we should send an update out 
 	# If this is a message, we should send a DM
-	if (to['type'].find(u'plexus-update') == 0):
+# 	if (to['type'].find(u'plexus-update') == 0):
+# 		stat = do_sendUpdate(content_object)
+# 	elif (to['type'].find(u'plexus-message') == 0):
+# 		do_sendDM(content_object)
+
+	if (ph['plexus-identifier'].find(u'plexus-update') == 0):
 		stat = do_sendUpdate(content_object)
-	elif (to['type'].find(u'plexus-message') == 0):
+	elif (ph['plexus-identifier'].find(u'plexus-message') == 0):
 		do_sendDM(content_object)
 
 # We do everything here that we need to so we can post an update to Twitter.
@@ -317,7 +329,7 @@ if __name__ == "__main__":
 	else:
 		set_ip = kuanyin_ip
 		
-	print "Starting mail server on", set_ip, "port 4180"
+	print "Starting Plexus SMTP interface on", set_ip, "port 4180"
 	server = PlexusSMTPServer((set_ip, 4180), None)
 	asyncore.loop()
 

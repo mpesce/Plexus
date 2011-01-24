@@ -284,8 +284,8 @@ if __name__ == "__main__":
 				plexus_data = { "service": "twitter", "plexus-message": direct.text.encode('utf-8'), "source": name_list, "when": str(direct.created_at_in_seconds) }
 				msg = MIMEText(json.dumps(plexus_data))
 				msg.set_charset('utf-8') 
-				msg['To'] = screen_name.encode('utf-8') + "@" + dest_id + ".plexus.relationalspace.org"  # That should be unique and global across Plexus
-				msg['From'] = "plexus-message@" + instance_id + ".plexus.relationalspace.org"  # Routing information for message type
+				msg['To'] = screen_name.encode('utf-8') + "." + dest_id + "@plexus.relationalspace.org"  # That should be unique and global across Plexus
+				msg['From'] = "plexus-message." + instance_id + "@plexus.relationalspace.org"  # Routing information for message type
 				msg['Subject'] = str(uuid.uuid4())  # unique ID for tracking messages
 				
 				print msg.as_string()
@@ -310,8 +310,8 @@ if __name__ == "__main__":
 			#signature = rsa.sign(listener_uuid, keys['priv'])
 			#print signature
 			# Get the user to put into 'From' field
-			msg['To'] = screen_name.encode('utf-8') + "@" + dest_id + ".plexus.relationalspace.org"  # That should be unique and global across Plexus
-			msg['From'] = "plexus-update@" + instance_id + ".plexus.relationalspace.org"  # Routing information for message type
+			msg['To'] = screen_name.encode('utf-8') + "." + dest_id + "@plexus.relationalspace.org"  # That should be unique and global across Plexus
+			msg['From'] = "plexus-update." + instance_id + "@plexus.relationalspace.org"  # Routing information for message type
 			msg['Subject'] = str(uuid.uuid4())  # unique ID for tracking messages
 			
 			print msg.as_string()
