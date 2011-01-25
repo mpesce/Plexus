@@ -62,7 +62,7 @@ def send_update(data):
 	#print "The data is: ", data
 
 	name_list = [ my_name, ]
-	plexus_data = { "service": "twitter", "plexus-update": data.encode('utf-8'), "source": name_list, "when": str(int(time.time())) }
+	plexus_data = { "service": "plxcli", "plexus-update": data.encode('utf-8'), "source": name_list, "when": str(int(time.time())) }
 	msg = MIMEText(json.dumps(plexus_data))
 	msg.set_charset('utf-8') 
 		
@@ -85,7 +85,7 @@ def send_message(msg, to):
 	print to
 
 	name_list = [ to.encode('utf-8'), ]
-	plexus_data = { "service": "twitter", "plexus-message": msg.encode('utf-8'), "destination": name_list, "when": str(int(time.time())) }
+	plexus_data = { "service": "plxcli", "plexus-message": msg.encode('utf-8'), "destination": name_list, "when": str(int(time.time())) }
 	msg = MIMEText(json.dumps(plexus_data))
 	msg.set_charset('utf-8') 
 	msg['From'] = my_name + "." + instance_id + "@plexus.relationalspace.org"  # That should be unique and global across Plexus

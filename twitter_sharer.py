@@ -18,6 +18,21 @@ dest_id = "dfd51f44-c44f-5d75-973f-2eef4854a4e5" # uuid.uuid5(uuid.NAMESPACE_DNS
 mypod_ip = "74.207.224.149"
 kuanyin_ip ="192.168.0.37"
 
+# Returns True if we are running on Android - use absolute paths
+def isAndroid():
+	try:
+		import android
+		#print "Android!"
+		return True
+	except:
+		return False
+
+def getAndroidPath():
+	if isAndroid():
+		return "/sdcard/sl4a/scripts/v2/"
+	else:
+		return ""
+
 def writeFile(content, file):
     fp = open(file, "wb")
     fp.writelines(yaml.dump(content))
@@ -27,8 +42,8 @@ def writeFile(content, file):
 # The instance ID is a UUID specific to this instance, uniquely identifies this listener
 def getInstance():
 	#print "getInstance()"
-	if (os.path.isfile(".twitter_listener")):
-		fp = open(".twitter_listener", "r")
+	if (os.path.isfile(getAndroidPath() + ".twitter_listener")):
+		fp = open(getAndroidPath() + ".twitter_listener", "r")
 		a = yaml.load(fp)
 		fp.close()
 		return a
@@ -40,7 +55,7 @@ def getInstance():
 def genInstance():
 	print "Generating instance UUID..."
 	instance_id = str(uuid.uuid4())
-	writeFile(instance_id, ".twitter_listener")
+	writeFile(instance_id, getAndroidPath() + ".twitter_listener")
 	print "Done!"
 
 
@@ -48,17 +63,17 @@ def genInstance():
 def genKey():
     print "Generating your keypair, THIS WILL TAKE A LONG TIME.  At least ten minutes.  Make a nice cuppa..."
     keypair = rsa.newkeys(512)  # Should be secure until 2030.  Well, that's what they say, anyway...
-    writeFile(keypair[0], ".plexus_public_key")  # This is so not secure
-    writeFile(keypair[1], ".plexus_private_key") # THis is especially not secure
+    writeFile(keypair[0], getAndroidPath() + ".plexus_public_key")  # This is so not secure
+    writeFile(keypair[1], getAndroidPath() + ".plexus_private_key") # THis is especially not secure
     print "Done!"
  
 
 # Retrieve the RSA keypair
 def getPubPriv():
-    if (os.path.isfile(".plexus_public_key") and os.path.isfile(".plexus_private_key")):
-        fp = open(".plexus_public_key", "rb")
+    if (os.path.isfile(getAndroidPath() + ".plexus_public_key") and os.path.isfile(getAndroidPath() + ".plexus_private_key")):
+        fp = open(getAndroidPath() + ".plexus_public_key", "rb")
         pubkey = yaml.load(fp)
-        fp = open(".plexus_private_key", "rb")
+        fp = open(getAndroidPath() + ".plexus_private_key", "rb")
         privkey = yaml.load(fp)
         fp.close()
         return {'priv': privkey, 'pub': pubkey}
@@ -67,8 +82,8 @@ def getPubPriv():
 
 
 def getLogin():
-    if (os.path.isfile(".twittercredentials")):
-        fp = open(".twittercredentials", "r")
+    if (os.path.isfile(getAndroidPath() + ".twittercredentials")):
+        fp = open(getAndroidPath() + ".twittercredentials", "r")
         a = yaml.load(fp)
         fp.close()
         return a
@@ -78,7 +93,7 @@ def getLogin():
 
 def authorize():
 	result = get_access_token()
-	fp = open(".twittercredentials", "wb")  # This is not secure and must be fixed
+	fp = open(getAndroidPath() + ".twittercredentials", "wb")  # This is not secure and must be fixed
 	fp.writelines(yaml.dump(result))
 	fp.close()
 
@@ -327,7 +342,7 @@ if __name__ == "__main__":
 	if (len(sys.argv) > 1):
 		set_ip = sys.argv[1]
 	else:
-		set_ip = kuanyin_ip
+		set_ip = "localhost"
 		
 	print "Starting Plexus SMTP interface on", set_ip, "port 4180"
 	server = PlexusSMTPServer((set_ip, 4180), None)

@@ -11,8 +11,23 @@ import os
 import threading
 import sqlite3
 
-dbname = 'dq.db'		# Name of the DQ database, sensibly
+dbfname = 'dq.db'		# Name of the DQ database, sensibly
 semi = threading.Semaphore()		# Start us up, with (we hope) a global semaphore
+
+# Returns True if we are running on Android - use absolute paths
+def isAndroid():
+	try:
+		import android
+		#print "Android!"
+		return True
+	except:
+		return False
+
+def getDBName():	
+	if isAndroid():
+		return "/sdcard/sl4a/scripts/db/v2/" + dbfname
+	else:
+		return 'db' + os.sep + dbfname
 
 def open_listener_db():
 
@@ -23,20 +38,27 @@ def open_listener_db():
 	#print('Acquired semaphore')
 
 	try:
-		testy = os.stat('db' + os.sep + dbname)
+		testy = os.stat(getDBName())
 	except OSError:		# No directory, apparently
-		try:
-			os.mkdir('db')
-			print('Created db directory')
-		except OSError:
-			print('Directory db already exists, will not create it')
+		if (isAndroid()):
+			try:
+				os.mkdir('/sdcard/sl4a/scripts/db')
+				print 'Created Android db directory'
+			except OSError:
+				print 'Directory db already exists, will not create it'
+		else:
+			try:
+				os.mkdir('db')
+				print('Created db directory')
+			except OSError:
+				print('Directory db already exists, will not create it')
 
 	# Try to connect to the plexbase.  
 	# If we can't, we need to create it.
 	# We return a connection object thingy
 	try:
 		#print('Trying to connect')
-		connector = sqlite3.connect('db' + os.sep + dbname)
+		connector = sqlite3.connect(getDBName())
 		#print('Successful connection')
 		# Do we know if we have the correct table in this database?
 		# Or any tables at all?

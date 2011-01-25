@@ -15,6 +15,20 @@ mypod_ip = "74.207.224.149"
 kuanyin_ip ="192.168.0.37"
 android_ip = "192.168.0.148"
 
+# Returns True if we are running on Android - use absolute paths
+def isAndroid():
+	try:
+		import android
+		#print "Android!"
+		return True
+	except:
+		return False
+
+def getAndroidPath():
+	if isAndroid():
+		return "/sdcard/sl4a/scripts/v2/"
+	else:
+		return ""
 
 # Get your own IP address.  This is the IPV4 address, so when we go to IPV6, that'll need fixing...
 # Also, if this is a multi-homed machine, this could return, erm, "indeterminate" (read: wrong) results.
@@ -30,8 +44,8 @@ def writeFile(content, file):
 # The instance ID is a UUID specific to this instance, uniquely identifies this listener
 def getInstance():
 	#print "getInstance()"
-	if (os.path.isfile(".twitter_listener")):
-		fp = open(".twitter_listener", "r")
+	if (os.path.isfile(getAndroidPath() + ".twitter_listener")):
+		fp = open(getAndroidPath()+ ".twitter_listener", "r")
 		a = yaml.load(fp)
 		fp.close()
 		return a
@@ -43,7 +57,7 @@ def getInstance():
 def genInstance():
 	print "Generating instance UUID..."
 	instance_id = str(uuid.uuid4())
-	writeFile(instance_id, ".twitter_listener")
+	writeFile(instance_id, getAndroidPath() + ".twitter_listener")
 	print "Done!"
 
 
@@ -51,17 +65,17 @@ def genInstance():
 def genKey():
     print "Generating your keypair, THIS WILL TAKE A LONG TIME.  At least ten minutes.  Make a nice cuppa..."
     keypair = rsa.newkeys(512)  # Should be secure until 2030.  Well, that's what they say, anyway...
-    writeFile(keypair[0], ".plexus_public_key")  # This is so not secure
-    writeFile(keypair[1], ".plexus_private_key") # THis is especially not secure
+    writeFile(keypair[0], getAndroidPath() + ".plexus_public_key")  # This is so not secure
+    writeFile(keypair[1], getAndroidPath() + ".plexus_private_key") # THis is especially not secure
     print "Done!"
  
 
 # Retrieve the RSA keypair
 def getPubPriv():
-    if (os.path.isfile(".plexus_public_key") and os.path.isfile(".plexus_private_key")):
-        fp = open(".plexus_public_key", "rb")
+    if (os.path.isfile(getAndroidPath() + ".plexus_public_key") and os.path.isfile(getAndroidPath() + ".plexus_private_key")):
+        fp = open(getAndroidPath() + ".plexus_public_key", "rb")
         pubkey = yaml.load(fp)
-        fp = open(".plexus_private_key", "rb")
+        fp = open(getAndroidPath() + ".plexus_private_key", "rb")
         privkey = yaml.load(fp)
         fp.close()
         return {'priv': privkey, 'pub': pubkey}
@@ -70,8 +84,8 @@ def getPubPriv():
 
 
 def getLogin():
-    if (os.path.isfile(".twittercredentials")):
-        fp = open(".twittercredentials", "r")
+    if (os.path.isfile(getAndroidPath() + ".twittercredentials")):
+        fp = open(getAndroidPath() + ".twittercredentials", "r")
         a = yaml.load(fp)
         fp.close()
         return a
@@ -81,7 +95,7 @@ def getLogin():
 
 def authorize():
 	result = get_access_token()
-	fp = open(".twittercredentials", "wb")  # This is not secure and must be fixed
+	fp = open(getAndroidPath() + ".twittercredentials", "wb")  # This is not secure and must be fixed
 	fp.writelines(yaml.dump(result))
 	fp.close()
 
@@ -129,13 +143,18 @@ def get_access_token():
 	  print 'Invalid respond from Twitter requesting temp token: %s' % resp['status']
 	else:
 	  request_token = dict(parse_qsl(content))
-	
-	  print ''
-	  print 'Please visit this Twitter page and retrieve the pincode to be used'
-	  print 'in the next step to obtaining an Authentication Token:'
-	  print ''
-	  print '%s?oauth_token=%s' % (AUTHORIZATION_URL, request_token['oauth_token'])
-	  print ''
+	  if isAndroid():  # We can launch a browser if it's Android
+	  	theURL = '%s?oauth_token=%s' % (AUTHORIZATION_URL, request_token['oauth_token'])
+	  	import android
+	  	droid = android.Android()
+	  	droid.startActivity('android.intent.action.VIEW', theURL)
+	  else:		
+		  print ''
+		  print 'Please visit this Twitter page and retrieve the pincode to be used'
+		  print 'in the next step to obtaining an Authentication Token:'
+		  print ''
+		  print '%s?oauth_token=%s' % (AUTHORIZATION_URL, request_token['oauth_token'])
+		  print ''
 	
 	  pincode = raw_input('Pincode? ')
 	
@@ -205,7 +224,12 @@ def mail_msg_plexus(txt):
 	msg = MIMEText(txt)
 	msg.set_charset('utf-8') 
 	msg['Subject'] = "twitter_listener.py"
-	s = smtplib.SMTP(kuanyin_ip, 4180)  # of course, this could be running anywhere, really
+
+	if (len(sys.argv) > 1):
+		set_ip = sys.argv[1]
+	else:
+		set_ip = "localhost"
+	s = smtplib.SMTP(set_ip, 4180)  # of course, this could be running anywhere, really
 	s.sendmail("mark@markpesce.com", "mpesce@gmail.com", msg.as_string())
 	s.quit()
 
