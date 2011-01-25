@@ -17,6 +17,16 @@ import plxaddr
 mypod_ip = "74.207.224.149"
 kuanyin_ip ="192.168.0.37"
 android_ip = "192.168.0.148"
+set_ip = "localhost"
+
+# Returns True if we are running on Android - use absolute paths
+def isAndroid():
+	try:
+		import android
+		#print "Android!"
+		return True
+	except:
+		return False
 
 class PlexusSMTPServer(smtpd.SMTPServer):
 
@@ -162,10 +172,20 @@ def process_message(msg):
 		print "We are sharing, so we NQ this"
 
 if __name__ == "__main__":
-	if (len(sys.argv) > 1):
-		set_ip = sys.argv[1]
+
+	# We'll use the Facade UI to ask the user for the server IP addreess, if Android.
+	if isAndroid():
+		import android
+		droid = android.Android()
+		an_ip = droid.dialogGetInput('IP', 'Server IP address?', '127.0.0.1').result
+		if (an_ip != None):		# Cancel pressed?
+			if (len(an_ip) > 7):	# Malformed IP address?  (should be validated)
+				set_ip = an_ip
 	else:
-		set_ip = get_my_ipv4()
+		if (len(sys.argv) > 1):
+			set_ip = sys.argv[1]
+		else:
+			set_ip = get_my_ipv4()
 	
 	print "Starting Plexus SMTP interface on", set_ip,  "port 4180"
 	server = PlexusSMTPServer((set_ip, 4180), None)

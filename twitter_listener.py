@@ -14,6 +14,7 @@ dest_id = "e2eb0d8b-b82c-5c2f-b6f1-dee1038fd9ae" # uuid.uuid5(uuid.NAMESPACE_DNS
 mypod_ip = "74.207.224.149"
 kuanyin_ip ="192.168.0.37"
 android_ip = "192.168.0.148"
+set_ip = "localhost"
 
 # Returns True if we are running on Android - use absolute paths
 def isAndroid():
@@ -225,10 +226,6 @@ def mail_msg_plexus(txt):
 	msg.set_charset('utf-8') 
 	msg['Subject'] = "twitter_listener.py"
 
-	if (len(sys.argv) > 1):
-		set_ip = sys.argv[1]
-	else:
-		set_ip = "localhost"
 	s = smtplib.SMTP(set_ip, 4180)  # of course, this could be running anywhere, really
 	s.sendmail("mark@markpesce.com", "mpesce@gmail.com", msg.as_string())
 	s.quit()
@@ -283,6 +280,18 @@ if __name__ == "__main__":
 		genInstance()
 		instance_id = getInstance()
 
+	# We'll use the Facade UI to ask the user for the server IP addreess, if Android.
+	if isAndroid():
+		import android
+		droid = android.Android()
+		an_ip = droid.dialogGetInput('IP', 'Server IP address?', '127.0.0.1').result
+		if (an_ip != None):		# Cancel pressed?
+			if (len(an_ip) > 7):	# Malformed IP address?  (should be validated)
+				set_ip = an_ip
+	else:
+		if (len(sys.argv) > 1):
+			set_ip = sys.argv[1]
+			
 	start_id = None
 	starting_timestamp = time.time()  # Current time
 	dm_since = None

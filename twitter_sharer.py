@@ -339,10 +339,19 @@ if __name__ == "__main__":
 		genInstance()
 		instance_id = getInstance()
 
-	if (len(sys.argv) > 1):
-		set_ip = sys.argv[1]
+	# We'll use the Facade UI to ask the user for the server IP addreess, if Android.
+	set_ip = "localhost"
+	if isAndroid():
+		import android
+		droid = android.Android()
+		an_ip = droid.dialogGetInput('IP', 'Server IP address?', '127.0.0.1').result
+		if (an_ip != None):		# Cancel pressed?
+			if (len(an_ip) > 7):	# Malformed IP address?  (should be validated)
+				set_ip = an_ip
 	else:
-		set_ip = "localhost"
+		if (len(sys.argv) > 1):
+			set_ip = sys.argv[1]
+
 		
 	print "Starting Plexus SMTP interface on", set_ip, "port 4180"
 	server = PlexusSMTPServer((set_ip, 4180), None)
