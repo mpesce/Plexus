@@ -3,5 +3,7 @@ This is version 2 (v2) of Plexus, a meta-API for the social web.
 It's all very early days, and I don't know that this will install or work correctly for anyone
 other than myself at present.  But hey, give it a whirl!
 
+Lately, I have tried hard to make this all work under Python for Android.  If you do install it on your Android device, please place all files into /sdcard/sl4a/scripts/v2, because it won't work anywhere else.  (Sorry, absolute paths are are a requirement in Python for Android.)
+
 Mark Pesce
 mpesce AT gmail.com
