@@ -188,13 +188,24 @@ def main():
     elif option == '--pw':
       pw = arg
 
-  while not user:
-    print 'NOTE: Please run these tests only with a test account.'
-    user = raw_input('Please enter your username: ')
-  while not pw:
-    pw = getpass.getpass()
-    if not pw:
-      print 'Password cannot be blank.'
+  # If running on Android, use Facade to get this information.  Possibly.
+  try:
+  	import android
+	droid = android.Android()
+	user = droid.dialogGetInput('Username', 'Google username', 'yourname@gmail.com').result
+	if (user == None):
+		return
+	pw = droid.dialogGetPassword().result
+	if (pw == None):
+		return
+  except:
+	  while not user:
+		print 'NOTE: Please run these tests only with a test account.'
+		user = raw_input('Please enter your username: ')
+	  while not pw:
+		pw = getpass.getpass()
+		if not pw:
+		  print 'Password cannot be blank.'
 
 
   try:
