@@ -28,6 +28,7 @@ import getpass
 import atom
 import gdata.contacts
 import gdata.contacts.service
+import plex
 
 class GoogleContacts(object):
   """GoogleCotacts object demonstrates imports Google Contacts into the Plex."""
@@ -160,6 +161,7 @@ class GoogleContacts(object):
 				  entry_email.append(email.address)
 				  #print '    %s' % (email.address),
 				  db_entry = { "name": entry_name, "email": entry_email }  # This could potentially contain many things
+				  self.SendToPlex(db_entry)
 				  #print
 				  #print db_entry
           	#else:
@@ -174,6 +176,12 @@ class GoogleContacts(object):
       feed = feed = self.gd_client.GetContactsFeed(next.href)
       print ".",
       sys.stdout.flush()
+
+  def SendToPlex(self, entry):
+	"""Sends the Google Contact entry to the Plex to be added to the social graph"""
+	plx = plex.Plex()
+	plx.close()
+	return
 
   def Run(self):
     """Retrieves the exhaustive list of contacts and displays name and primary email."""
