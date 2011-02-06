@@ -143,6 +143,7 @@ class GoogleContacts(object):
 
   def AddContacts(self, feed):
     ctr = 0
+    print "Reading contacts.",
     while feed:
       # Print contents of current feed
       if not feed.entry:
@@ -151,18 +152,28 @@ class GoogleContacts(object):
       for i, entry in enumerate(feed.entry):
         #print entry
         if entry.content:
-          print '    %s' % (entry.title.text),
-#       if entry.content:
-#         	for thingy in entry.content:
-#         		print thingy
-#           		#print '    %s' % (entry.content.text),
-        for email in entry.email:
-          print '    %s' % (email.address),
-        print
-      feed = False
+        	entry_name = entry.title.text
+          	#print '    %s' % (entry.title.text),
+          	if (len(entry.email) > 0):
+          		entry_email = []
+          		for email in entry.email:
+				  entry_email.append(email.address)
+				  #print '    %s' % (email.address),
+				  db_entry = { "name": entry_name, "email": entry_email }  # This could potentially contain many things
+				  #print
+				  #print db_entry
+          	#else:
+          		#print '   NO EMAIL'
+
+      #feed = False
       # Prepare for next feed iteration
-      #next = feed.GetNextLink()
-      #feed = feed = self.gd_client.GetContactsFeed(next.href)
+      next = feed.GetNextLink()
+      if (next == None):
+      	print
+      	return
+      feed = feed = self.gd_client.GetContactsFeed(next.href)
+      print ".",
+      sys.stdout.flush()
 
   def Run(self):
     """Retrieves the exhaustive list of contacts and displays name and primary email."""
