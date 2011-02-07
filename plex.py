@@ -126,16 +126,23 @@ class Plex:
 			
 			# If there is already an entry that matches
 			# We do not create a new one.
-			if self.is_in_plex(fullname[0], fullname[1], publicUid) == True:
-				# Eventually we should use this point to update information in the Plexbase
-				print('Matches something in Plex, not inserting')
+			if len(fullname) > 1:
+				if self.is_in_plex(fullname[0], fullname[1], publicUid) == True:
+					# Eventually we should use this point to update information in the Plexbase
+					print('Matches something in Plex, not inserting')
+					continue
+			elif self.is_in_plex(lastname=fullname[0], uid=publicUid) == True:
+				print 'Matches something in Plex, not inserting'
 				continue
 
 			try:
 				# Add the entry to the Plex, creating a plex uuid for it along the way...
 				pluid = str(uuid.uuid4())  # Create Plexus UID
 				curs = self.connector.cursor()
-				curs.execute('insert into graph values (?, ?, ?, ?)', (fullname[0], fullname[1], publicUid, pluid))				#self.connector.execute("insert into graph values (\'" + fullname[0] + "\', \'" + fullname[1] + "\', \'" + publicUid + "\', \' \')")
+				if len(fullname) > 1:
+					curs.execute('insert into graph values (?, ?, ?, ?)', (fullname[0], fullname[1], publicUid, pluid))				#self.connector.execute("insert into graph values (\'" + fullname[0] + "\', \'" + fullname[1] + "\', \'" + publicUid + "\', \' \')")
+				else:
+					curs.execute('insert into graph values (?, ?, ?, ?)', ("", fullname[0], publicUid, pluid))
 
 				# Iterate through the connections, adding them to the connections table
 				conlist = jcard['connections']

@@ -177,9 +177,25 @@ class GoogleContacts(object):
       print ".",
       sys.stdout.flush()
 
+  def CreateVCard(self, entry):
+    """Returns a vCard for a given Google Contacts entry"""
+    
+    # Create connections based on entry
+    connections = []
+    for an_email in entry["email"]:			# Gosh, does this work?
+    	thingy = { "email": an_email }
+    	connections.append(thingy)
+    	
+    vcard = { "vcard": [ { "fn": entry["name"], "connections": connections } ] }
+    return vcard
+    
   def SendToPlex(self, entry):
 	"""Sends the Google Contact entry to the Plex to be added to the social graph"""
+	
+	vcard = self.CreateVCard(entry)
+	print vcard
 	plx = plex.Plex()
+	plx.add_from_jcard(vcard)
 	plx.close()
 	return
 
