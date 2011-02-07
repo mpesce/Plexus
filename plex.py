@@ -109,6 +109,17 @@ class Plex:
 		print('is_in_plex no matches found')
 		return False
 
+	def name_to_pluid(self, cursor, firstname='', lastname=''):
+		if len(firstname) > 1:
+			matches = cursor.execute('select * from graph where firstname=? and lastname=?', (firstname, lastname))
+		else:
+			matches = cursor.execute('select * from graph where lastname=?', (lastname))
+		resultant = cursor.fetchone()
+		if (resultant != None):
+			return resultant[3]			# This should be the pluid
+		else:
+			return None
+	
 	def add_from_jcard(self, jcards):
 		# We've got a JSON-like object which is our jCard
 		# Ideally it's been somewhat validated
@@ -126,25 +137,37 @@ class Plex:
 			
 			# If there is already an entry that matches
 			# We do not create a new one.
+			insert = True
 			if len(fullname) > 1:
 				if self.is_in_plex(fullname[0], fullname[1], publicUid) == True:
 					# Eventually we should use this point to update information in the Plexbase
 					print('Matches something in Plex, not inserting')
-					continue
-			elif self.is_in_plex(lastname=fullname[0], uid=publicUid) == True:
+					insert = False
+			elif self.is_in_plex(lastname=fullname[0], uid=publicUid) == True:  # Only one name
 				print 'Matches something in Plex, not inserting'
-				continue
+				insert = False
 
+			curs = self.connector.cursor()
 			try:
 				# Add the entry to the Plex, creating a plex uuid for it along the way...
-				pluid = str(uuid.uuid4())  # Create Plexus UID
-				curs = self.connector.cursor()
-				if len(fullname) > 1:
-					curs.execute('insert into graph values (?, ?, ?, ?)', (fullname[0], fullname[1], publicUid, pluid))				#self.connector.execute("insert into graph values (\'" + fullname[0] + "\', \'" + fullname[1] + "\', \'" + publicUid + "\', \' \')")
-				else:
-					curs.execute('insert into graph values (?, ?, ?, ?)', ("", fullname[0], publicUid, pluid))
+				if (insert == True):
+					pluid = str(uuid.uuid4())  # Create Plexus UID
+					#curs = self.connector.cursor()
+					if len(fullname) > 1:
+						curs.execute('insert into graph values (?, ?, ?, ?)', (fullname[0], fullname[1], publicUid, pluid))				#self.connector.execute("insert into graph values (\'" + fullname[0] + "\', \'" + fullname[1] + "\', \'" + publicUid + "\', \' \')")
+					else:
+						curs.execute('insert into graph values (?, ?, ?, ?)', ("", fullname[0], publicUid, pluid))
 
-				# Iterate through the connections, adding them to the connections table
+				# Grab the correct pluid for this entry in the graph, if we haven't generated one
+				if (insert == False):
+					if len(fullname) > 1:
+						pluid = self.name_to_pluid(curs, fullname[0], fullname[1])
+						print 'inserting existing match into connections'
+					else:
+						pluid = self.name_to_pluid(cursor=curs, lastname=fullname[0])
+						print 'inserting existing match into connections'
+						
+				# Iterate through the connections, adding them to the connections table		
 				conlist = jcard['connections']
 				for connection in conlist:
 					print connection
@@ -173,6 +196,7 @@ def pluid_to_name(id):
 		return((resultant[0],resultant[1]))
 	else:
 		return None
+
 
 # Sample jCard for testing
 tcs = '''{ "vcard" : [ { 
