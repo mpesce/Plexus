@@ -160,7 +160,7 @@ class GoogleContacts(object):
           		for email in entry.email:
 				  entry_email.append(email.address)
 				  #print '    %s' % (email.address),
-				  db_entry = { "name": entry_name, "email": entry_email }  # This could potentially contain many things
+				  db_entry = { "name": entry_name, "smtp": entry_email }  # This could potentially contain many things
 				  self.SendToPlex(db_entry)
 				  #print
 				  #print db_entry
@@ -182,8 +182,8 @@ class GoogleContacts(object):
     
     # Create connections based on entry
     connections = []
-    for an_email in entry["email"]:			# Gosh, does this work?
-    	thingy = { "email": an_email }
+    for an_email in entry["smtp"]:			# Gosh, does this work?
+    	thingy = { "smtp": an_email }
     	connections.append(thingy)
     	
     vcard = { "vcard": [ { "fn": entry["name"], "connections": connections } ] }
