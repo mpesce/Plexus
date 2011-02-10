@@ -25,7 +25,7 @@
 import sys, os
 #import getopt
 #import getpass
-import yaml
+import yaml, json
 import plex
 import twitter
 
@@ -61,7 +61,21 @@ class TwitterContacts(object):
       raise BaseException()
     else:
       print 'Successful login to Twitter'
+
+	# Now get our screen name, which we'll be needing later on
+    #self.screen_name = self.get_my_screen_name()
+    #print 'My screen name is %s' % self.screen_name
+    
+    # Now that we have the screen name, get my user info
+    #self.user = self.api.GetUser(self.screen_name)
+    #print self.user
     return
+
+  def get_my_screen_name(self):
+    statuses = self.api.GetUserTimeline(count=2)
+    for status in statuses:
+      screen_name = status.user.screen_name
+      return screen_name	
 
   def AddContacts(self, feed):
     ctr = 0
@@ -120,14 +134,40 @@ class TwitterContacts(object):
 	plx.close()
 	return
 
+  # This function was taken from the Python-twitter implementation
+  # But um, I've fixed it so that it actually works.
+  # Hasn't anyone else needed this?
+  # It now returns a tuple of (friends[], next_cursor)
+  def GetFriends(self, user=None, cursor=-1):
+
+    if not user and not self.api._oauth_consumer:
+      raise twitter.TwitterError("twitter.Api instance must be authenticated")
+    if user:
+      url = '%s/statuses/friends/%s.json' % (self.api.base_url, user)
+    else:
+      url = '%s/statuses/friends.json' % self.api.base_url
+    parameters = {}
+    parameters['cursor'] = cursor
+    jsondata = self.api._FetchUrl(url, parameters=parameters)
+    data = json.loads(jsondata)
+    #print data['next_cursor_str']
+    self.api._CheckForTwitterError(data)
+    return ([twitter.User.NewFromJsonDict(x) for x in data['users']], int(data['next_cursor_str']))
+
   def Run(self):
     """Retrieves the exhaustive list of contacts and displays name and primary email."""
-    a_contact = self.api.GetFriends()
-    for friend in a_contact:
-      print friend.name,
-      print friend.screen_name
-    #feed = self.gd_client.GetContactsFeed()
-    #self.AddContacts(feed)
+    done = False
+    curs = -1  # Get the whole lot
+    while curs != 0:
+      (friends, next_curs) = self.GetFriends(cursor=curs)
+      #contact_list = ret["users"]
+      #curs = ret["next_cursor"]
+      for friend in friends:
+        print "\"%s\"     %s" % (friend.name, friend.screen_name)
+        #feed = self.gd_client.GetContactsFeed()
+        #self.AddContacts(a_contact)
+      curs = next_curs
+      print 'Getting next list of friends...'
 
 # Returns True if we are running on Android - use absolute paths
 def isAndroid():
