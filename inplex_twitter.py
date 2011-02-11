@@ -77,62 +77,15 @@ class TwitterContacts(object):
       screen_name = status.user.screen_name
       return screen_name	
 
-  def AddContacts(self, feed):
-    ctr = 0
-    print "Reading contacts.",
-    while feed:
-      # Print contents of current feed
-      if not feed.entry:
-        print '\nNo entries in feed.\n'
-        return
-      for i, entry in enumerate(feed.entry):
-        #print entry
-        if entry.content:
-        	entry_name = entry.title.text
-          	#print '    %s' % (entry.title.text),
-          	if (len(entry.email) > 0):
-          		entry_email = []
-          		for email in entry.email:
-				  entry_email.append(email.address)
-				  #print '    %s' % (email.address),
-				  db_entry = { "name": entry_name, "email": entry_email }  # This could potentially contain many things
-				  self.SendToPlex(db_entry)
-				  #print
-				  #print db_entry
-          	#else:
-          		#print '   NO EMAIL'
-
-      #feed = False
-      # Prepare for next feed iteration
-      next = feed.GetNextLink()
-      if (next == None):
-      	print
-      	return
-      feed = feed = self.gd_client.GetContactsFeed(next.href)
-      print ".",
-      sys.stdout.flush()
-
-  def CreateVCard(self, entry):
-    """Returns a vCard for a given Twitter Contact entry"""
-    
-    # Create connections based on entry
-    connections = []
-    for an_email in entry["twitter"]:			# Gosh, does this work?
-    	thingy = { "twitter": an_email }
-    	connections.append(thingy)
+  def AddContacts(self, friend):
+    """Adds a Twitter Friend to the Plex"""
     	
-    vcard = { "vcard": [ { "fn": entry["name"], "connections": connections } ] }
-    return vcard
-    
-  def SendToPlex(self, entry):
-	"""Sends the Twitter Contact entry to the Plex to be added to the social graph"""
-	
-	vcard = self.CreateVCard(entry)
-	print vcard
-	plx = plex.Plex()
-	plx.add_from_jcard(vcard)
-	plx.close()
-	return
+    vcard = { "vcard": [ { "fn": friend.name, "connections": [{"twitter": friend.screen_name},] } ] }
+    print vcard
+    plx = plex.Plex()
+    plx.add_from_jcard(vcard)
+    plx.close()
+    return
 
   # This function was taken from the Python-twitter implementation
   # But um, I've fixed it so that it actually works.
@@ -159,13 +112,10 @@ class TwitterContacts(object):
     done = False
     curs = -1  # Get the whole lot
     while curs != 0:
-      (friends, next_curs) = self.GetFriends(cursor=curs)
-      #contact_list = ret["users"]
-      #curs = ret["next_cursor"]
+      (friends, next_curs) = self.GetFriends(cursor=curs)  # Why yes, Google, I FIXED YOUR BUGGY CODE
       for friend in friends:
-        print "\"%s\"     %s" % (friend.name, friend.screen_name)
-        #feed = self.gd_client.GetContactsFeed()
-        #self.AddContacts(a_contact)
+        #print "\"%s\"     %s" % (friend.name, friend.screen_name)
+        self.AddContacts(friend)
       curs = next_curs
       print 'Getting next list of friends...'
 
