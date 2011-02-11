@@ -44,7 +44,7 @@ def makevcard(first, last, uid, connections):
     inside = { "fn": fn, "connections": con_list }
   outside = { "vcard" : [ inside, ] }
   #print outside
-  return outside
+  return json.dumps(outside)
 
 def main():
 
