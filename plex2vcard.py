@@ -46,7 +46,9 @@ def makevcard(first, last, uid, connections):
   #print outside
   return json.dumps(outside)
 
-def main():
+
+# Just call this function to return the whole plex as a series of JSON-style vcards
+def plex2vcards():
 
   plx = plex.Plex()		# Open the Plex, would be bad if we can't.
   
@@ -56,7 +58,8 @@ def main():
   
   # OK, now iterate through the list
   social_graph = curs.fetchall()
-  print 'The social graph has %d entries.' % (len(social_graph))
+  #print 'The social graph has %d entries.' % (len(social_graph))
+  retval = ""
   for friend in social_graph:
     friend_firstname = friend[0]
     friend_lastname = friend[1]
@@ -72,9 +75,15 @@ def main():
     	#print '     %s  %s' % (each_connection[1], each_connection[2])
     	cons.append(json.loads(each_connection[2]))
     vcard = makevcard(friend_firstname, friend_lastname, friend_uid, cons)
-    print vcard
-  return
+    #print vcard
+    if (len(retval) == 0):
+      retval = vcard
+    else:
+      retval = retval + "\n" + vcard
+  plx.close()
+  return retval
 
 
 if __name__ == "__main__":
-  main()
+  vcards = plex2vcards()
+  print vcards

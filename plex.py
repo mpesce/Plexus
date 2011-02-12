@@ -72,9 +72,9 @@ class Plex:
 		# If we can't, we need to create it.
 		# We return a connection object thingy
 		try:
-			print('Trying to connect')
+			#print('Trying to connect')
 			self.connector = sqlite3.connect(getDBName())
-			print('Successful connection')
+			#print('Successful connection')
 			# Do we know if we have the correct table in this database?
 			# Or any tables at all?
 			self.connector.execute('''create table if not exists graph (firstname text, lastname text, uid text, pluid text primary key)''')
