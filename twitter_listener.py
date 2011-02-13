@@ -316,7 +316,7 @@ if __name__ == "__main__":
 	start_id = None
 	starting_timestamp = time.time()  # Current time
 	dm_since = None
-	count_num = 2 # a maximum of 50 statuses
+	count_num = 50 # number of statuses to return per check  (maximum of 100)
 	while True:
 
 		api = twitter.Api(consumer_key="4a4AK5ZUpJu3fxNfaXb5A", consumer_secret="IRvMihJ6vVLIMcWDDIe945zoqMHiwfVY3FCbnasMAMk",

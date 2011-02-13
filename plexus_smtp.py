@@ -34,6 +34,7 @@ import email
 import socket
 import dq
 import plxaddr
+import plex
 
 mypod_ip = "74.207.224.149"
 kuanyin_ip ="192.168.0.37"
@@ -129,6 +130,44 @@ def validate_payload(the_payload):
 	except TypeError:
 		return False
 	return True
+	
+# Escape quotes in a string, suitable for passing along to sqlite3
+def escape_quotes(astr):
+  retstr = ''
+  for c in astr:
+    #print 'c: ' + c 
+    if (c == "\""):
+      retstr = retstr + '\\\"'
+    else:
+      retstr = retstr + c
+  #print 'retstr: ' + retstr
+  return retstr
+
+# Examine the contents of a message going to the DQ, and return a matching pluid
+def contents_to_pluid(contents):
+  cont = json.loads(contents)		# We should have something nice now
+	
+  # This is going to have to be handled a LOT more modularly. 
+  service = cont['service']
+  if (service.find('twitter') == 0):	# OK, so this is Twitter, we know what to do here
+    screen_name = cont['source'][0]		# Should only be one of these, one would hope
+    the_search = [[service, screen_name],]
+    search_str = json.dumps(the_search)
+    #search_str = escape_quotes(search_str)
+    the_cmd = 'select * from connections where info=\'%s\'' % search_str
+    print "the_cmd:  " + the_cmd
+		
+    plx = plex.Plex()
+    curs = plx.connector.cursor()
+    matches = curs.execute(the_cmd)
+    resultant = curs.fetchone()
+    plx.close()
+    if (resultant != None):
+      print "Matched pluid: " + resultant[0]
+      return resultant[0] # should be the pluid
+    else:
+      return None
+
 
 # Eventually this function will be moving to another, more central module
 # All incoming messages from whatever transport make their way to this function
@@ -181,10 +220,12 @@ def process_message(msg):
 		if (state.find(u'plexus-update') == 0):			# Twitter updates, etc.
 			print "UPDATE"
 			print "Sending it to the DQ"
-			dq.send_listened(ph['tracking_id'], state, content_object['when'], contents)	# Pop it onto the DQ
+			pluid = contents_to_pluid(contents)
+			dq.send_listened(ph['tracking_id'], state, pluid, content_object['when'], contents)	# Pop it onto the DQ
 		elif (state.find(u'plexus-message') == 0):			# Twitter DMs, emails, FB messages, etc.
 			print "MESSAGE"
-			dq.send_listened(ph['tracking_id'], state, content_object['when'], contents)	# Pop it onto the DQ
+			pluid = contents_to_pluid(contents)
+			dq.send_listened(ph['tracking_id'], state, pluid, content_object['when'], contents)	# Pop it onto the DQ
 		elif (state.find(u'plexus-post') == 0):			# RSS, for example
 			print "POST"
 		elif (state.find(u'plexus-command') == 0):			# Plexus commands <- very important

@@ -84,7 +84,7 @@ def open_listener_db():
 		#print('Successful connection')
 		# Do we know if we have the correct table in this database?
 		# Or any tables at all?
-		connector.execute('''create table if not exists dequeue (msgid text, type text, timestamp text, data text)''')
+		connector.execute('''create table if not exists dequeue (msgid text, type text, pluid text, timestamp text, data text)''')
 	except:
 		print('Some sort of exception connecting to listenbase')
 		connector = None
@@ -96,12 +96,12 @@ def close_listener_db(connector):
 	semi.release()
 	#print('Semaphore released')
 
-def send_listened(msgid, type, timestamp, data):
+def send_listened(msgid, type, pluid, timestamp, data):
 	print("We've listened to something!")
 	print msgid, type, timestamp, data
 	connector = open_listener_db()
 	if (connector != None):
-		connector.execute('insert into dequeue values (?,?,?,?)', (msgid, type, timestamp, data))
+		connector.execute('insert into dequeue values (?,?,?,?,?)', (msgid, type, pluid, timestamp, data))
 		close_listener_db(connector)
 
 def get_listened(index):
@@ -112,7 +112,7 @@ def get_listened(index):
 		curs = connector.cursor()
 		curs.execute('select * from heard where ROWID=?',(index,))
 		result = curs.fetchone()
-		retobj = plobject.Plobject(result[0], result[1], result[2], result[3], result[4], result[5])
+		#retobj = plobject.Plobject(result[0], result[1], result[2], result[3], result[4], result[5])
 		close_listener_db(connector)
 		return retobj
 	else:
