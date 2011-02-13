@@ -317,12 +317,12 @@ if __name__ == "__main__":
 	starting_timestamp = time.time()  # Current time
 	dm_since = None
 	count_num = 50 # number of statuses to return per check  (maximum of 100)
-	while True:
 
-		api = twitter.Api(consumer_key="4a4AK5ZUpJu3fxNfaXb5A", consumer_secret="IRvMihJ6vVLIMcWDDIe945zoqMHiwfVY3FCbnasMAMk",
+	api = twitter.Api(consumer_key="4a4AK5ZUpJu3fxNfaXb5A", consumer_secret="IRvMihJ6vVLIMcWDDIe945zoqMHiwfVY3FCbnasMAMk",
 			access_token_key=credentials['oauth_token'], access_token_secret=credentials['oauth_token_secret'])
-		screen_name = get_my_screen_name(api)  # odd way to do it, but whatevs
-		
+	screen_name = get_my_screen_name(api)  # odd way to do it, but whatevs
+
+	while True:		
 		# Check for DMs before we move along to the statuses (because they're more important, aren't they?)
 		if (dm_since == None):
 			print "Starting timestamp: ", starting_timestamp
