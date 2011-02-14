@@ -186,7 +186,7 @@ class GoogleContacts(object):
     	thingy = { "smtp": an_email }
     	connections.append(thingy)
     	
-    vcard = { "vcard": [ { "fn": entry["name"], "connections": connections } ] }
+    vcard = { "vcard": [ { "fn": entry["name"], "plexus-type": "plexus-message", "connections": connections } ] }
     return vcard
     
   def SendToPlex(self, entry):

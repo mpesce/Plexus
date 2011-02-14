@@ -80,7 +80,7 @@ class TwitterContacts(object):
   def AddContacts(self, friend):
     """Adds a Twitter Friend to the Plex"""
     	
-    vcard = { "vcard": [ { "fn": friend.name, "connections": [{"twitter": friend.screen_name},] } ] }
+    vcard = { "vcard": [ { "fn": friend.name, "plexus-type": "plexus-message", "connections": [{"twitter": friend.screen_name},] } ] }
     print vcard
     plx = plex.Plex()
     plx.add_from_jcard(vcard)
@@ -112,6 +112,7 @@ class TwitterContacts(object):
     done = False
     curs = -1  # Get the whole lot
     while curs != 0:
+      # This will need to become GetFollowers to work altogether correctly, but for the moment it will do
       (friends, next_curs) = self.GetFriends(cursor=curs)  # Why yes, Google, I FIXED YOUR BUGGY CODE
       for friend in friends:
         #print "\"%s\"     %s" % (friend.name, friend.screen_name)

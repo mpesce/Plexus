@@ -73,7 +73,7 @@ def plex2vcards():
     friend_connections = curs.fetchall()
     for each_connection in friend_connections:
     	#print '     %s  %s' % (each_connection[1], each_connection[2])
-    	cons.append(json.loads(each_connection[2]))
+    	cons.append(json.loads(each_connection[3]))
     vcard = makevcard(friend_firstname, friend_lastname, friend_uid, cons)
     #print vcard
     if (len(retval) == 0):

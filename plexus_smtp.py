@@ -168,6 +168,33 @@ def contents_to_pluid(contents):
     else:
       return None
 
+# Examine the contents of a message going to the DQ, and return a matching pluid
+def outgoing_message_to_pluid(contents):
+
+  # Convert the content to JSON, so we can have a go
+  try:
+    cont = json.loads(contents)		# We should have something nice now
+  except:		# Blew up on the JSON conversion?
+    'EXCEPTION on outgoing_message_to_pluid'
+    return ''
+
+  # There should be a nice key pair in here with the name of 'destination'
+  # Theoretically this is a firstname, lastname combo.  Theoretically.
+  # This gets considerably more interesting if it's not, so let's just go with that for now.
+  fullname = cont['destination'][0]   # Better be the first one, eh?
+  if (fullname.find(' ') > 0):   # Firstname, lastname.  We hope.
+    (firstname, lastname) = fullname.split(' ')   # Split into first and last name, if they exist
+  else:
+    firstname = ''
+    lastname = fullname
+	
+  plx = plex.Plex()
+  curs = plx.connector.cursor()
+  pluid = plx.name_to_pluid(curs, firstname, lastname)
+  if (pluid == None):
+    pluid = ''
+    print 'No matches for %s to pluid' % fullname
+  return pluid
 
 # Eventually this function will be moving to another, more central module
 # All incoming messages from whatever transport make their way to this function
@@ -216,8 +243,9 @@ def process_message(msg):
 			nq.send_shared(ph['tracking_id'], state, "", content_object['when'], contents)	# Pop it onto the NQ
 		elif (state.find(u'plexus-message') == 0):			# Twitter DMs, emails, FB messages, etc.
 			print "SHARED MESSAGE"
-			pluid = contents_to_pluid(contents)
-			nq.send_shared(ph['tracking_id'], state, "", content_object['when'], contents)	# Pop it onto the NQ
+			pluid = outgoing_message_to_pluid(contents)
+			print 'pluid: %s' % pluid
+			nq.send_shared(ph['tracking_id'], state, pluid, content_object['when'], contents)	# Pop it onto the NQ
 
 
 if __name__ == "__main__":

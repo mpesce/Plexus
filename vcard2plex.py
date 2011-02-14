@@ -27,6 +27,9 @@ import sys, os
 import plex
 import json
 
+
+# This is broken right now.  Probably don't use it.
+
 # When passed a file descriptor thingy of some sort (such as stdin)
 # Read the lines of the file as separate vcards, which get added to the Plex.  We hope.
 def vcards2plex(a_file):
@@ -44,5 +47,7 @@ def vcards2plex(a_file):
 # cat input.vcards | python vcard2plex.py
 #
 if __name__ == "__main__":
+  print 'This is broken right now.'
+  return
   the_file = sys.stdin
   vcards2plex(the_file)

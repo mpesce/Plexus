@@ -102,7 +102,7 @@ def beam(msgid, type, pluid, timestamp, data, host, port, dest_id):
   msg = MIMEText(data)
   msg.set_charset('utf-8') 
   msg['From'] = my_name + "." + instance_id + "@plexus.relationalspace.org"  # That should be unique and global across Plexus
-  msg['To'] = "plexus-update." + dest_id + "@plexus.relationalspace.org"  # Routing information for message type
+  msg['To'] = type + "." + dest_id + "@plexus.relationalspace.org"  # Routing information for message type
   msg['Subject'] = msgid # unique ID for tracking messages
 
   # To transport by SMTP, we wrap our RFC2822-compliant message in another header. 
@@ -120,29 +120,75 @@ def beam(msgid, type, pluid, timestamp, data, host, port, dest_id):
   except:
     print 'We threw an exception trying to send that.  Probably the host is not there or refused.  Sorry.'
 
+def share_map_from_type(type):
+
+  # Let's find the mapping(s) for this type.
+  # What do we do if we have multiple mappings?  Probably we use them all.  For now.
+  # Returns a tuple of host, port, dest_id
+  base = Sharer()
+  curs = base.connector.cursor()
+  matches = curs.execute('select * from share_map where type=?', (type,))
+  resultant = curs.fetchone()
+  base.close()
+  if (len(resultant) == 0):
+    return (None, None, None)
+  else:
+    return (resultant[2], resultant[3], resultant[4])
+
 # This is the entry point for anything that wants to share something
 def share(msgid, type, pluid, timestamp, data):
-  print 'We should be sharing right now...'
+  #print 'We should be sharing right now...'
 
-  # First off, let's find out if there is a specific sharer for this pluid
-  # Erm, do we have a pluid?
-  if (len(pluid) > 0):
-    # Well, if we do, we don't know what to do with it.  Yet.
-    print 'We have a pluid, vague hand-waving motions...'
-  else:
+  if (type.find('plexus-update') == 0):
     
+    print 'We should be sharing an update...'
     # Let's find the mapping(s) for this type.
     # What do we do if we have multiple mappings?  Probably we use them all.  For now.
-    base = Sharer()
-    curs = base.connector.cursor()
-    matches = curs.execute('select * from share_map where type=?', (type,))
-    resultant = curs.fetchall()
-    if (len(resultant) == 0):
-      print 'No matching types, which is weird and PROBABLY VERY WRONG, aborting...'
+    (host, port, dest_id) = share_map_from_type(type)
+    if (host == None):
+      print 'No matching type for UPDATE, which is weird and PROBABLY VERY WRONG, aborting...'
       return
     else:
       for method in resultant:
-        beam(msgid, type, pluid, timestamp, data, method[2], method[3], method[4])  # Should send things right along.  Probably.
+        beam(msgid, type, pluid, timestamp, data, host, port, dest_id)  # Should send things right along.  Probably.
+        return
+        
+  if (type.find('plexus-message') == 0):
+  
+    print 'We should be sharing a message...'
+    
+    # Translate the pluid and type into all matching access methods to send the message
+    # If there are no messages, we can't send the message and we make a sad.
+    import plex			# No need to do this unless we really need to, we can move it later
+    plx = plex.Plex()
+    curs = plx.connector.cursor()
+    matches = curs.execute('select * from connections where pluid=? and type=?', (pluid, type))
+    resultant = curs.fetchall()
+    plx.close()
+    if (len(resultant) > 0):		# We has some matches, yay!
+    
+      for connection in resultant:
+        method = connection[2]
+        credential = json.loads(connection[3])
+        print 'method: %s       credential: %s' % (method, credential)
+        
+        # For the moment, we'll focus on Twitter.  This should be modular, blah blah blah
+        if (method.find('twitter') == 0):
+          print 'Packing something off to Twitter'
+          old_data = json.loads(data)  # Grab the old data
+          print old_data
+          print credential[0]
+          print credential[0][1]
+          plexus_data = { "service": "plexus", "plexus-message": old_data['plexus-message'], "destination": [credential[0][1],], "when": old_data['when'] }
+          new_plexus_data = json.dumps(plexus_data)
+          (host, port, dest_id) = share_map_from_type(type)
+          if (host == None):
+            print 'No matching type for MESSAGE, which is weird and probably wrong, aborting...'
+          else:
+            beam(msgid, type, pluid, timestamp, new_plexus_data, host, port, dest_id)
+    else:
+      print 'No matches in connections database for %s and %s, abandonding message.' % (pluid, type)
+      
   return
 
 # Given a pluid and plexus type, returns (service, pointer) if one exists
@@ -162,8 +208,9 @@ def match_service(pluid, type):
 def init_share_map():
 	base = Sharer()
 	curs = base.connector.cursor()
+	curs.execute('''insert into share_map values ("plexus-message", "twitter", "192.168.0.57", "4181", "5d686217-fbe8-4d72-9440-db2da08b45a6", "")''')
 	curs.execute('''insert into share_map values ("plexus-message", "smtp", "localhost", "4180", "bbb3af78-7e94-4dd1-b15a-c1ee3527a018", "")''')
-	curs.execute('''insert into share_map values ("plexus-update", "twitter", "localhost", "4181", "5d686217-fbe8-4d72-9440-db2da08b45a6", "")''')
+	curs.execute('''insert into share_map values ("plexus-update", "twitter", "192.168.0.57", "4181", "5d686217-fbe8-4d72-9440-db2da08b45a6", "")''')
 	base.close()
 	print 'New share_map database created.'
 
