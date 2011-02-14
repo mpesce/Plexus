@@ -374,7 +374,7 @@ if __name__ == "__main__":
 			set_ip = sys.argv[1]
 
 		
-	print "Starting Plexus SMTP interface on", set_ip, "port 4180"
-	server = PlexusSMTPServer((set_ip, 4180), None)
+	print "Starting Plexus SMTP interface on", set_ip, "port 4181"
+	server = PlexusSMTPServer((set_ip, 4181), None)
 	asyncore.loop()
 

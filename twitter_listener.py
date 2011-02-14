@@ -228,12 +228,12 @@ def mail_msg(txt):
 	msg['Subject'] = "twitter_listener.py"
 	s = smtplib.SMTP()
 	s.set_debuglevel(False)
-	s.connect("smtp.gmail.com", 587)
+	s.connect("smtp.smtphost.tld", 587)   # smtp.google.com, for example
 	s.ehlo()
 	s.starttls()
 	s.ehlo()
-	s.login("mpesce@gmail.com", "********")
-	s.sendmail("mark@markpesce.com", "mpesce@gmail.com", msg.as_string())
+	s.login("user@smtphost.tld", "password")
+	s.sendmail("to@hostname.tld", "from@hostname.tld", msg.as_string())
 	s.close()
 
 
@@ -257,25 +257,8 @@ def get_my_screen_name(api):
 	for status in statuses:
 		screen_name = status.user.screen_name
 		return screen_name	
-	
 
-# def make_msg(api, screen_name, update):
-# 	plexus_data = { "service": "twitter", "update": update }
-# 	#mime_header ="MIME-Version 1.0\nContent-Transfer-Encoding: 7bit\nContent-Type: plexus/update; charset=\"utf-8\"\n\n"
-# 	msg = MIMEText(json.dumps(plexus_data))
-# 	msg.set_charset('utf-8') 
-# 	msg['Subject'] = str(uuid.uuid4())
-# 		
-# 	# Create the 'From' field by signing the UUID of the module with the private key
-# 	#signature = rsa.sign(listener_uuid, keys['priv'])
-# 	#print signature
-# 	# Get the user to put into 'From' field
-# 	msg['From'] = screen_name.encode('utf-8')
-# 	msg['To'] = "TO BE COMPLETED"
-# 
-# 	return msg		
-
-if __name__ == "__main__":
+def main():
 
 	# Check to see if we have a keypair
 #	keys = getPubPriv()
@@ -291,8 +274,6 @@ if __name__ == "__main__":
 		print "You don't have Twitter authorization, let's do that now..."
 		authorize()
 		credentials = getLogin()
-#	else:
-#		print "We already have authorization, so let's grab some statuses..."
 
 	# Get the Instance ID
 	instance_id = getInstance()
@@ -326,50 +307,67 @@ if __name__ == "__main__":
 		# Check for DMs before we move along to the statuses (because they're more important, aren't they?)
 		if (dm_since == None):
 			print "Starting timestamp: ", starting_timestamp
-			directs = api.GetDirectMessages()
+			try:
+			  directs = api.GetDirectMessages()
+			except:
+			  print 'Twitter API GetDirectMessages blew a sprocket, trying to recover gracefully'
+			  directs = None
 		else:
-			directs = api.GetDirectMessages(since_id=dm_since)
-		for direct in directs:
-			if dm_since < direct.id:
-				dm_since = direct.id	# Keep things current
+			try:
+			  directs = api.GetDirectMessages(since_id=dm_since)
+			except:
+			  print 'Twitter API GetDirectMessages blew a sprocket, trying to recover gracefully'
+			  directs = None
+		
+		if (directs != None):
+		  for direct in directs:
+			  if dm_since < direct.id:
+				  dm_since = direct.id	# Keep things current
 
-			if (direct.created_at_in_seconds > starting_timestamp):	 # Since we started up?
-				name_list = [ direct.sender_screen_name.encode('utf-8'), ]
-				plexus_data = { "service": "twitter", "plexus-message": direct.text.encode('utf-8'), "source": name_list, "when": str(direct.created_at_in_seconds) }
+			  if (direct.created_at_in_seconds > starting_timestamp):	 # Since we started up?
+				  name_list = [ direct.sender_screen_name.encode('utf-8'), ]
+				  plexus_data = { "service": "twitter", "plexus-message": direct.text.encode('utf-8'), "source": name_list, "when": str(direct.created_at_in_seconds) }
+				  msg = MIMEText(json.dumps(plexus_data))
+				  msg.set_charset('utf-8') 
+				  msg['To'] = screen_name.encode('utf-8') + "." + dest_id + "@plexus.relationalspace.org"  # That should be unique and global across Plexus
+				  msg['From'] = "plexus-message." + instance_id + "@plexus.relationalspace.org"  # Routing information for message type
+				  msg['Subject'] = str(uuid.uuid4())  # unique ID for tracking messages
+				  print msg.as_string()
+				  #mail_msg(msg.as_string())
+				  mail_msg_plexus(msg.as_string())
+			
+		try:
+		  statuses = api.GetFriendsTimeline(count=count_num, since_id=start_id)
+		except:
+		  print 'Twitter API GetFriendsTimeline blew a sprocket, trying to recover gracefully'
+		  statuses = None
+		
+		if (statuses != None):
+			for status in statuses:
+			
+				if start_id < status.id:
+					start_id = status.id		# Keep latest status
+				#txt = yaml.dump(status)
+				#txt = status.user.screen_name.encode('utf-8') + ": " + status.text.encode('utf-8')
+				#msg = make_msg(api, screen_name, status.text.encode('utf-8'))
+				name_list = [ status.user.screen_name.encode('utf-8'), ]
+				plexus_data = { "service": "twitter", "plexus-update": status.text.encode('utf-8'), "source": name_list, "when": str(status.created_at_in_seconds) }
+				#mime_header ="MIME-Version 1.0\nContent-Transfer-Encoding: 7bit\nContent-Type: plexus/update; charset=\"utf-8\"\n\n"
 				msg = MIMEText(json.dumps(plexus_data))
 				msg.set_charset('utf-8') 
+					
+				# Create the 'From' field by signing the UUID of the module with the private key
+				#signature = rsa.sign(listener_uuid, keys['priv'])
+				#print signature
+				# Get the user to put into 'From' field
 				msg['To'] = screen_name.encode('utf-8') + "." + dest_id + "@plexus.relationalspace.org"  # That should be unique and global across Plexus
-				msg['From'] = "plexus-message." + instance_id + "@plexus.relationalspace.org"  # Routing information for message type
+				msg['From'] = "plexus-update." + instance_id + "@plexus.relationalspace.org"  # Routing information for message type
 				msg['Subject'] = str(uuid.uuid4())  # unique ID for tracking messages
-				
 				print msg.as_string()
 				#mail_msg(msg.as_string())
 				mail_msg_plexus(msg.as_string())
-			
-		statuses = api.GetFriendsTimeline(count=count_num, since_id=start_id)	
-		for status in statuses:
-		
-			if start_id < status.id:
-				start_id = status.id		# Keep latest status
-			#txt = yaml.dump(status)
-			#txt = status.user.screen_name.encode('utf-8') + ": " + status.text.encode('utf-8')
-			#msg = make_msg(api, screen_name, status.text.encode('utf-8'))
-			name_list = [ status.user.screen_name.encode('utf-8'), ]
-			plexus_data = { "service": "twitter", "plexus-update": status.text.encode('utf-8'), "source": name_list, "when": str(status.created_at_in_seconds) }
-			#mime_header ="MIME-Version 1.0\nContent-Transfer-Encoding: 7bit\nContent-Type: plexus/update; charset=\"utf-8\"\n\n"
-			msg = MIMEText(json.dumps(plexus_data))
-			msg.set_charset('utf-8') 
-				
-			# Create the 'From' field by signing the UUID of the module with the private key
-			#signature = rsa.sign(listener_uuid, keys['priv'])
-			#print signature
-			# Get the user to put into 'From' field
-			msg['To'] = screen_name.encode('utf-8') + "." + dest_id + "@plexus.relationalspace.org"  # That should be unique and global across Plexus
-			msg['From'] = "plexus-update." + instance_id + "@plexus.relationalspace.org"  # Routing information for message type
-			msg['Subject'] = str(uuid.uuid4())  # unique ID for tracking messages
-			
-			print msg.as_string()
-			#mail_msg(msg.as_string())
-			mail_msg_plexus(msg.as_string())
 		print "Sleeping..."
 		time.sleep(30)			# wait 30 seconds, and do it all again
+
+if __name__ == "__main__":
+  main()

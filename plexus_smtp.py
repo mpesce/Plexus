@@ -32,7 +32,7 @@ from email.mime.text import MIMEText
 from email.parser import Parser, HeaderParser
 import email
 import socket
-import dq
+import dq, nq
 import plxaddr
 import plex
 
@@ -182,28 +182,6 @@ def process_message(msg):
 		print "Garbled headers, rejecting"
 		return
 
-# 	msgid = msg['Subject']		# Should have a UUID therein - some way to validate this?
-# 	
-# 	mfrom = msg['From']		# Get the addressee information
-# 	f = unpack_sender(mfrom)
-# 	print f
-# 
-# 	mto = msg['To']
-# 	to = unpack_to(mto)
-# 	print to
-
-# 	if validate_type(f['type']):
-# 		print "Type valid"
-# 	else:
-# 		print "Type invalid"
-# 		return
-
-# 	if validate_type(ph['plexus-identifier']):
-# 		print "Plexus Identifier valid"
-# 	else:
-# 		print "Plexus Identifier invalid"
-# 		return
-
 	contents = msg.get_payload()
 	if validate_payload(contents):
 		print "Contents valid"
@@ -213,25 +191,34 @@ def process_message(msg):
 	content_object = json.loads(contents)	# Now we have a lovely object with stuff in it
 
 	# Is there anything more fun than a state machine?  I thought not.
-#	state = f['type']
 	if (ph['listened']):
 		print "We are listening, so we DQ this"
 		state = ph['plexus-identifier']
 		if (state.find(u'plexus-update') == 0):			# Twitter updates, etc.
-			print "UPDATE"
+			print "LISTENED UPDATE"
 			print "Sending it to the DQ"
 			pluid = contents_to_pluid(contents)
 			dq.send_listened(ph['tracking_id'], state, pluid, content_object['when'], contents)	# Pop it onto the DQ
 		elif (state.find(u'plexus-message') == 0):			# Twitter DMs, emails, FB messages, etc.
-			print "MESSAGE"
+			print "LISTENED MESSAGE"
 			pluid = contents_to_pluid(contents)
 			dq.send_listened(ph['tracking_id'], state, pluid, content_object['when'], contents)	# Pop it onto the DQ
 		elif (state.find(u'plexus-post') == 0):			# RSS, for example
-			print "POST"
+			print "LISTENED POST"
 		elif (state.find(u'plexus-command') == 0):			# Plexus commands <- very important
-			print "COMMAND"
+			print "LISTENED COMMAND"
 	else:
 		print "We are sharing, so we NQ this"
+		state = ph['plexus-identifier']
+		if (state.find(u'plexus-update') == 0):			# Twitter updates, etc.
+			print "SHARED UPDATE"
+			print "Sending it to the DQ"
+			nq.send_shared(ph['tracking_id'], state, "", content_object['when'], contents)	# Pop it onto the NQ
+		elif (state.find(u'plexus-message') == 0):			# Twitter DMs, emails, FB messages, etc.
+			print "SHARED MESSAGE"
+			pluid = contents_to_pluid(contents)
+			nq.send_shared(ph['tracking_id'], state, "", content_object['when'], contents)	# Pop it onto the NQ
+
 
 if __name__ == "__main__":
 
