@@ -154,7 +154,7 @@ def contents_to_pluid(contents):
     the_search = [[service, screen_name],]
     search_str = json.dumps(the_search)
     #search_str = escape_quotes(search_str)
-    the_cmd = 'select * from connections where info=\'%s\'' % search_str
+    the_cmd = '''select * from connections where service="%s" and credential="%s"''' % (service, screen_name)
     print "the_cmd:  " + the_cmd
 		
     plx = plex.Plex()
