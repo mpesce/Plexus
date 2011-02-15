@@ -183,10 +183,10 @@ class GoogleContacts(object):
     # Create connections based on entry
     connections = []
     for an_email in entry["smtp"]:			# Gosh, does this work?
-    	thingy = { "smtp": an_email }
+    	thingy = { "type": "plexus-message", "service": "smtp", "credential": an_email }  # New connection format
     	connections.append(thingy)
     	
-    vcard = { "vcard": [ { "fn": entry["name"], "plexus-type": "plexus-message", "connections": connections } ] }
+    vcard = { "vcard": [ { "fn": entry["name"], "connections": connections } ] }
     return vcard
     
   def SendToPlex(self, entry):

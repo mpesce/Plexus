@@ -80,7 +80,7 @@ class TwitterContacts(object):
   def AddContacts(self, friend):
     """Adds a Twitter Friend to the Plex"""
     	
-    vcard = { "vcard": [ { "fn": friend.name, "plexus-type": "plexus-message", "connections": [{"twitter": friend.screen_name},] } ] }
+    vcard = { "vcard": [ { "fn": friend.name, "connections": [{"type": "plexus-message", "service": "twitter", "credential": friend.screen_name},] } ] }
     print vcard
     plx = plex.Plex()
     plx.add_from_jcard(vcard)

@@ -149,9 +149,8 @@ def share(msgid, type, pluid, timestamp, data):
       print 'No matching type for UPDATE, which is weird and PROBABLY VERY WRONG, aborting...'
       return
     else:
-      for method in resultant:
-        beam(msgid, type, pluid, timestamp, data, host, port, dest_id)  # Should send things right along.  Probably.
-        return
+      beam(msgid, type, pluid, timestamp, data, host, port, dest_id)  # Should send things right along.  Probably.
+      return
         
   if (type.find('plexus-message') == 0):
   
@@ -168,18 +167,18 @@ def share(msgid, type, pluid, timestamp, data):
     if (len(resultant) > 0):		# We has some matches, yay!
     
       for connection in resultant:
-        method = connection[2]
-        credential = json.loads(connection[3])
-        print 'method: %s       credential: %s' % (method, credential)
+        service = connection[2]
+        credential = connection[3]
+        print '     type: %s       service:%s       credential: %s' % (type, service, credential)
         
         # For the moment, we'll focus on Twitter.  This should be modular, blah blah blah
-        if (method.find('twitter') == 0):
+        if (service.find('twitter') == 0):
           print 'Packing something off to Twitter'
           old_data = json.loads(data)  # Grab the old data
-          print old_data
-          print credential[0]
-          print credential[0][1]
-          plexus_data = { "service": "plexus", "plexus-message": old_data['plexus-message'], "destination": [credential[0][1],], "when": old_data['when'] }
+          #print old_data
+          #print credential[0]
+          #print credential[0][1]
+          plexus_data = { "service": "plexus", "plexus-message": old_data['plexus-message'], "destination": [credential,], "when": old_data['when'] }
           new_plexus_data = json.dumps(plexus_data)
           (host, port, dest_id) = share_map_from_type(type)
           if (host == None):

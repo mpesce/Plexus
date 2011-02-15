@@ -78,7 +78,7 @@ class Plex:
 			# Do we know if we have the correct table in this database?
 			# Or any tables at all?
 			self.connector.execute('''create table if not exists graph (firstname text, lastname text, uid text, pluid text primary key)''')
-			self.connector.execute('''create table if not exists connections (pluid text, type text, service text, info text)''')
+			self.connector.execute('''create table if not exists connections (pluid text, type text, service text, credential text)''')
 			return self.connector
 		except:
 			print('Some sort of exception connecting to plex')
@@ -127,7 +127,7 @@ class Plex:
 		# Now we need to add it to the plexbase
 		for jcard in jcards['vcard']:
 			name = jcard['fn']
-			plexus_type = jcard['plexus-type']
+
 			# break the name into firstname and lastname components
 			fullname = name.split()
 			# is there a uid?
@@ -173,7 +173,7 @@ class Plex:
 				conlist = jcard['connections']
 				for connection in conlist:
 					print connection
-					curs.execute('insert into connections values (?, ?, ?, ?)', (pluid, plexus_type, connection.items()[0][0], json.dumps(connection.items())))
+					curs.execute('insert into connections values (?, ?, ?, ?)', (pluid, connection['type'], connection['service'], connection['credential']))
 				print('New entry added to Plexbase.')
 			except KeyboardInterrupt:
 				print('Something did not work with that')

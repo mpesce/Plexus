@@ -31,7 +31,7 @@ def makevcard(first, last, uid, connections):
   #print connections
   con_list = []
   for con in connections:
-    mbr = { con[0][0]: con[0][1] }
+    mbr = { "type": con[0], "service": con[1], con[2][0][0]: con[2][0][1] }
     con_list.append(mbr)
   conpart = { "connections": con_list }
   if (len(first) > 0):
@@ -72,8 +72,8 @@ def plex2vcards():
     cons = []
     friend_connections = curs.fetchall()
     for each_connection in friend_connections:
-    	#print '     %s  %s' % (each_connection[1], each_connection[2])
-    	cons.append(json.loads(each_connection[3]))
+    	#print '     %s  %s %s' % (each_connection[1], each_connection[2], each_connection[3])
+    	cons.append([each_connection[1], each_connection[2], json.loads(each_connection[3])])
     vcard = makevcard(friend_firstname, friend_lastname, friend_uid, cons)
     #print vcard
     if (len(retval) == 0):
