@@ -31,6 +31,8 @@ import smtplib
 from email.mime.text import MIMEText
 
 instance_id = 'e309f818-f870-40ff-ba7a-8ff69a4bbe28'		# This should be provided programatically, but whatevs...
+smtp_login = ''
+smtp_pass = ''
 
 dbfname = 'sharer.db'		# Name of the Plexus sharer map database, sensibly
 # Returns True if we are running on Android - use absolute paths
@@ -91,6 +93,45 @@ class Sharer:
 		self.connector.commit()		# Commit all the changes to the plexbase
 		self.connector.close()
 
+def bemail(to, body, host, port, dest_id):
+  print 'We should be sending SMTP to %s on %s here' % (host, port)
+
+  # Eventually a function will handle this reasonably.
+  # For the moment, a constant
+  my_name = 'mpesce'
+  
+  # Now build the RFC2822/5822 message
+  msg = MIMEText(body)
+  msg.set_charset('utf-8') 
+  msg['From'] = my_name + "." + instance_id + "@plexus.relationalspace.org"  # That should be unique and global across Plexus
+  msg['To'] = to  # Routing information for message type
+  msg['Subject'] = 'Message from Plexus' # unique ID for tracking messages
+
+  # Get our credentials for SMTP.  Try to do this only once.
+  print "Sending mail...gathering credentials"
+  global smtp_login
+  if (len(smtp_login) == 0):
+    smtp_login = raw_input('smtp login: ')
+  global smtp_pass
+  if (len(smtp_pass) == 0):
+    smtp_pass = raw_input('smtp password: ')
+
+  try:
+    s = smtplib.SMTP()
+    s.set_debuglevel(False)
+    s.connect(host, int(port))   # smtp.google.com, for example
+    s.ehlo()
+    s.starttls()
+    s.ehlo()
+    s.login(smtp_login, smtp_pass)
+    s.sendmail(msg['From'], to, msg.as_string())
+    s.close()
+    print 'email should be sent'
+  except:
+    print 'We did not send an email, boo'
+  return
+
+
 def beam(msgid, type, pluid, timestamp, data, host, port, dest_id):
   print 'We are BEAMING to %s on port %s' % (host, port)
 
@@ -127,7 +168,26 @@ def share_map_from_type(type):
   # Returns a tuple of host, port, dest_id
   base = Sharer()
   curs = base.connector.cursor()
-  matches = curs.execute('select * from share_map where type=?', (type,))
+  ex = '''select * from share_map where type=\"%s\"''' % type
+  #print ex
+  matches = curs.execute(ex)
+  resultant = curs.fetchone()
+  base.close()
+  if (len(resultant) == 0):
+    return (None, None, None)
+  else:
+    return (resultant[2], resultant[3], resultant[4])
+
+def share_map_from_service_type(service, type):
+
+  # Let's find the mapping(s) for this type.
+  # What do we do if we have multiple mappings?  Probably we use them all.  For now.
+  # Returns a tuple of host, port, dest_id
+  base = Sharer()
+  curs = base.connector.cursor()
+  ex = '''select * from share_map where service=\"%s\" and type=\"%s\"''' % (service,type)
+  #print ex
+  matches = curs.execute(ex)
   resultant = curs.fetchone()
   base.close()
   if (len(resultant) == 0):
@@ -180,11 +240,22 @@ def share(msgid, type, pluid, timestamp, data):
           #print credential[0][1]
           plexus_data = { "service": "plexus", "plexus-message": old_data['plexus-message'], "destination": [credential,], "when": old_data['when'] }
           new_plexus_data = json.dumps(plexus_data)
-          (host, port, dest_id) = share_map_from_type(type)
+          (host, port, dest_id) = share_map_from_service_type(service, type)
           if (host == None):
             print 'No matching type for MESSAGE, which is weird and probably wrong, aborting...'
           else:
             beam(msgid, type, pluid, timestamp, new_plexus_data, host, port, dest_id)
+        # On the other hand, is this SMTP?  That's quite easy to deal with, relatively
+        elif (service.find('smtp') == 0):
+          print 'Packing something off to SMTP'
+          old_data = json.loads(data)
+          msg_body = old_data['plexus-message']
+          going_to = credential
+          (host, port, dest_id) = share_map_from_service_type(service, type)
+          if (host == None):
+            print 'No matching type for MESSAGE, which is weird and almost definitely wrong, aborting...'
+          else:
+            bemail(going_to, msg_body, host, port, dest_id)		# And send it off
     else:
       print 'No matches in connections database for %s and %s, abandonding message.' % (pluid, type)
       
@@ -208,7 +279,7 @@ def init_share_map():
 	base = Sharer()
 	curs = base.connector.cursor()
 	curs.execute('''insert into share_map values ("plexus-message", "twitter", "192.168.0.57", "4181", "5d686217-fbe8-4d72-9440-db2da08b45a6", "")''')
-	curs.execute('''insert into share_map values ("plexus-message", "smtp", "localhost", "4180", "bbb3af78-7e94-4dd1-b15a-c1ee3527a018", "")''')
+	curs.execute('''insert into share_map values ("plexus-message", "smtp", "smtp.gmail.com", "587", "bbb3af78-7e94-4dd1-b15a-c1ee3527a018", "")''')
 	curs.execute('''insert into share_map values ("plexus-update", "twitter", "192.168.0.57", "4181", "5d686217-fbe8-4d72-9440-db2da08b45a6", "")''')
 	base.close()
 	print 'New share_map database created.'
