@@ -47,7 +47,6 @@ def vcards2plex(a_file):
 # cat input.vcards | python vcard2plex.py
 #
 if __name__ == "__main__":
-  print 'This is broken right now.'
-  return
+  #print 'This is broken right now.'
   the_file = sys.stdin
   vcards2plex(the_file)
